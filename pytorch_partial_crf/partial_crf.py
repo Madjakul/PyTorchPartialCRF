@@ -1,23 +1,37 @@
+# pytorch_partial_crf/partial_crf.py
+
 from typing import Optional, Literal, Union
 
 import torch
 
 from pytorch_partial_crf.base_crf import BaseCRF
-from pytorch_partial_crf.utils import create_possible_tag_masks
+from pytorch_partial_crf.utils import (
+    IMPOSSIBLE_SCORE, create_possible_tag_masks
+)
 
-from pytorch_partial_crf.utils import IMPOSSIBLE_SCORE
 
 
 class PartialCRF(BaseCRF):
     """Partial/Fuzzy Conditional random field.
+
+    Parameters
+    ----------
+    q: float, optional
+        Hyperparameter used to modify the generalized cross-entropy.
+
+    Attributes
+    ----------
+    q: float, default=0.7
+        Hyperparameter used to modify the generalized cross-entropy.
     """
     __doc__ = BaseCRF.__doc__ + __doc__
 
     def __init__(
         self, num_tags: int, device: Literal["cpu", "cuda"],
-        padding_idx: Optional[int]=None
+        q: Optional[float]=None, padding_idx: Optional[int]=None
     ) -> None:
         super().__init__(num_tags, device, padding_idx)
+        self.q = q if q is not None else 0.7
 
     def _numerator_score(
         self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
@@ -36,6 +50,9 @@ class PartialCRF(BaseCRF):
         mask: Union[torch.ByteTensor, torch.cuda.ByteTensor]
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
+        possible_tags: Union[torch.ByteTensor, torch.cuda.ByteTensor]
+            Mask corresponding to the target label(s).
+            (batch_size, sequence_length, num_tags).
 
         Returns
         -------
@@ -141,22 +158,71 @@ class PartialCRF(BaseCRF):
     def forward(
         self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
         tags: Union[torch.LongTensor, torch.cuda.LongTensor],
+        loss_fn: Literal["nll", "c_nll", "gce"]="nll",
         mask: Optional[Union[torch.ByteTensor, torch.cuda.ByteTensor]]=None
     ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
+        """Performs the forward pass depending on the loss function chosen: the
+        classic negative log-likelihood, the corrected negative log-likelihood
+        where the the negative log-unlikelihood [1]_ is computed and used as a
+        regularizer [2]_ and the generelized cross-entropy [3]_ [4]_.
+
+        Parameters
+        ----------
+        emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
+            Unary/emission score of each tokens.
+            (batch_size, sequence_length, num_tags).
+        tags: Union[torch.LongTensor, torch.cuda.LongTensor]
+            Tensor containing the target labels. (batch_size, sequence_length).
+        loss_fn: str, {"nll", "c_nll", "gce"}, default="nll"
+            Loss function to use: "nll" for negative log-likelihood, "c_nll"
+            for corrected negative log-likelihood or "gce" for generalized
+            cross-entropy.
+        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor], optional
+            Masked used to to discard subwords, special tokens or padding from
+            being added to the log-probability. (batch_size, sequence_length).
+
+        Returns
+        -------
+        Union[torch.FloatTensor, torch.cuda.FloatTensor]
+            Mean of the losses over the mini-batch. (0,)
+
+        Refernces
+        ---------
+        ..  [1] Welleck, Sean, et al. "Neural text generation with unlikelihood
+                training." arXiv preprint arXiv:1908.04319 (2019).
+        ..  [2] Jiang, Haoming, et al. "Named entity recognition with small
+                strongly labeled and large weakly labeled data." arXiv preprint
+                arXiv:2106.08977 (2021).
+        ..  [3] Zhang, Zhilu, and Mert Sabuncu. "Generalized cross entropy loss
+                for training deep neural networks with noisy labels." Advances
+                in neural information processing systems 31 (2018).
+        ..  [4] Meng, Yu, et al. "Distantly-supervised named entity recognition
+                with noise-robust learning and language model augmented
+                self-training." arXiv preprint arXiv:2109.05003 (2021).
+        """
         if mask is None:
             mask = torch.ones_like(tags, dtype=torch.uint8)
-        possible_tags = create_possible_tag_masks(self.num_tags, tags)
-        print(possible_tags)
-        p = self.marginal_probabilities(emissions, mask).transpose(0, 1)
-        x = possible_tags.eq(1.0)
-        new_p = torch.masked_select(p, x)
-        print(new_p)
-        loss = (1 - new_p**0.7) / 0.7
-        print(loss)
-        loss = loss.sum() / len(loss)
-        print(loss)
+        possible_tags = create_possible_tag_masks(self.num_tags, tags)          # (batch_size, sequence_length, num_tags)
+        pred = self.marginal_probabilities(emissions, mask).transpose(0, 1)     # (batch_size, sequence_length, num_tags)
+        p_mask = possible_tags.eq(1.0)                                          # (batch_size, sequence_length, num_tags)
+        p_bar_mask = possible_tags.eq(0.0)                                      # (batch_size, sequence_length, num_tags)
+        p = torch.masked_select(pred, p_mask)                                   # (possible_tags==1,)
+        p_bar = torch.masked_select(pred, p_bar_mask)                           # (possible_tags==0,)
 
-        gold_score = self._numerator_score(emissions, mask, possible_tags)
-        forward_score = self._denominator_score(emissions, mask)
-        return torch.sum(forward_score - gold_score)
+        if loss_fn in ("nll", "c_nll"):
+            gold_score = self._numerator_score(emissions, mask, possible_tags)  # (batch_size,)
+            forward_score = self._denominator_score(emissions, mask)            # (batch_size,)
+            nll = forward_score - gold_score                                    # (batch_size,)
+            if loss_fn == "nll":
+                return torch.mean(nll)                                          # Mean instead of sum
+            nlu = -(1 - (-nll).exp()).log()
+            if torch.isnan(nlu).any() or torch.isinf(nlu).any():
+                nl = (1 - (-nll).exp())
+                nl = nl + (nl < 1e-4).to(nl).detach() * (1e-4 - nl).detach()
+                nlu = - nl.log()
+            c_nll = torch.mean(p) * nll + torch.mean(p_bar) * nlu               # Mean because it's the expecteancy (?)
+            return torch.mean(c_nll)
+        gce = (1 - p**self.q) / self.q
+        gce = torch.mean(gce)                                                   # (loss.view(-1)*weights).sum() / weights.sum()
+        return gce
 

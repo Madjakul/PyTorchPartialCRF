@@ -18,7 +18,7 @@ class BaseCRF(nn.Module):
         Number of possible tags (counting the padding one if needed).
     padding_idx: int, optional
         Padding index.
-    device: Literal["cpu", "cuda"]
+    device: str, {"cpu", "cuda"}
         Wether to do computation on GPU or CPU.
 
     Attributes
@@ -28,7 +28,7 @@ class BaseCRF(nn.Module):
     start_transitions: torch.nn.Parameter
         Begining scores of the transition matrix. Initialized with values
         values sampled from a uniform distribution in [-1; 1]. (num_tags).
-    device: Literal["cpu", "cuda"]
+    device: str, {"cpu", "cuda"}
         Wether to do computation on GPU or CPU.
     end_transitions: torch.nn.Parameter
         Ending scores of the transition matrix. Initialized with values
@@ -112,14 +112,12 @@ class BaseCRF(nn.Module):
         mask = mask.float().transpose(0, 1).contiguous()                    # (sequence_length, batch_size)
         broadcast_transitions = self.transitions.unsqueeze(0)               # (1, num_tags, num_tags)
         sequence_iter = range(1, sequence_length)
-
         # backward algorithm
         if reverse_direction:
             # Transpose transitions matrix and emissions
             broadcast_transitions = broadcast_transitions.transpose(1, 2)   # (1, num_tags, num_tags)
             broadcast_emissions = broadcast_emissions.transpose(2, 3)       # (sequence_length, batch_size, num_tags, 1)
             sequence_iter = reversed(sequence_iter)
-
             # It is beta
             log_proba = [self.end_transitions.expand(batch_size, num_tags)] # [(batch_size, num_tags)]
         # forward algorithm
@@ -129,7 +127,6 @@ class BaseCRF(nn.Module):
                 emissions.transpose(0, 1).contiguous()[0]
                 + self.start_transitions.unsqueeze(0)
             ]
-
         for i in sequence_iter:
             # Broadcast log probability
             broadcast_log_proba = log_proba[-1].unsqueeze(2)                # (batch_size, num_tags, 1)
@@ -148,24 +145,22 @@ class BaseCRF(nn.Module):
                 torch.logsumexp(inner, dim=1) * mask[i].unsqueeze(1)
                 + log_proba[-1] * (1 - mask[i]).unsqueeze(1)
             )
-
         if reverse_direction:
             log_proba.reverse()
-
         return torch.stack(log_proba)
 
     def marginal_probabilities(
         self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
         mask: Optional[Union[torch.FloatTensor, torch.cuda.FloatTensor]]=None
     ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
-        """Compute the probability of each token
+        """Computes the probability of each token.
 
         Parameters
         ----------
         emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
             Unary/emission score of each tokens.
             (batch_size, sequence_length, num_tags).
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor]
+        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor], optional
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
 
@@ -211,7 +206,7 @@ class BaseCRF(nn.Module):
         emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
             Unary/emission score of each tokens.
             (batch_size, sequence_length, num_tags).
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor]
+        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor], optional
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
 
@@ -230,11 +225,9 @@ class BaseCRF(nn.Module):
             )
         emissions = emissions.transpose(0, 1).contiguous()
         mask = mask.transpose(0, 1).contiguous()
-
         # Start transition and first emission score
         score = self.start_transitions + emissions[0]
         history = []
-
         for i in range(1, sequence_length):
             broadcast_score = score.unsqueeze(2)
             broadcast_emissions = emissions[i].unsqueeze(1)
@@ -243,13 +236,11 @@ class BaseCRF(nn.Module):
             next_score, indices = next_score.max(dim=1)
             score = torch.where(mask[i].unsqueeze(1) == 1, next_score, score)
             history.append(indices)
-
         # Add end transition score
         score += self.end_transitions
         # Compute the best path
         seq_ends = mask.long().sum(dim=0) - 1
         best_tags_list = []
-
         for i in range(batch_size):
             _, best_last_tag = score[i].max(dim=0)
             best_tags = [best_last_tag.item()]
@@ -258,6 +249,5 @@ class BaseCRF(nn.Module):
                 best_tags.append(best_last_tag.item())
             best_tags.reverse()
             best_tags_list.append(best_tags)
-
         return best_tags_list
 
