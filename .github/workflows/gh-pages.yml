@@ -18,6 +18,11 @@ jobs:
         with:
           python-version: 3.8
 
+      - name: Configure Git user identity
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -32,8 +37,6 @@ jobs:
 
       - name: Deploy to gh-pages branch
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           cd docs/_build && \
           git init && \
           git add . && \

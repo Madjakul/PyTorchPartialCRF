@@ -36,7 +36,7 @@ class PartialCRF(BaseCRF):
         self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
         mask: Union[torch.ByteTensor, torch.cuda.ByteTensor],
         possible_tags: Union[torch.ByteTensor, torch.cuda.ByteTensor]
-    ) -> Union[torch.ByteTensor, torch.cuda.FloatTensor]:
+    ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
         """
         Computes the log of the emission/unary score plus the transition score
         for the whole sequence.
