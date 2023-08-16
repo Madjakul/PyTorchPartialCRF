@@ -3,7 +3,7 @@ name: Build and Deploy Sphinx
 on:
   push:
     branches:
-      - main  # Change this to the branch you want to trigger the action on
+      - master
 
 jobs:
   build_and_deploy:
