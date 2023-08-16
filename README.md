@@ -145,7 +145,7 @@ MIT
 
 # References
 
-> kajyuuen. pytorch-partial-crf . 2021. [GitHub Repository]((https://github.com/kajyuuen/pytorch-partial-crf/tree/master))
+> kajyuuen. pytorch-partial-crf . 2021. [GitHub Repository](https://github.com/kajyuuen/pytorch-partial-crf/tree/master)
 
 > yumeng5. RoSTER. 2021. [GitHub Repository](https://github.com/yumeng5/RoSTER/tree/main)
 
