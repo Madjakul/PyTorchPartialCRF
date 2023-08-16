@@ -24,7 +24,6 @@ class PartialCRF(BaseCRF):
     q: float, default=0.7
         Hyperparameter used to modify the generalized cross-entropy.
     """
-    __doc__ = BaseCRF.__doc__ + __doc__
 
     def __init__(
         self, num_tags: int, device: Literal["cpu", "cuda"],
@@ -163,8 +162,8 @@ class PartialCRF(BaseCRF):
     ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
         """Performs the forward pass depending on the loss function chosen: the
         classic negative log-likelihood, the corrected negative log-likelihood
-        where the the negative log-unlikelihood [1]_ is computed and used as a
-        regularizer [2]_ and the generelized cross-entropy [3]_ [4]_.
+        where the the negative log-unlikelihood [3]_ is computed and used as a
+        regularizer [4]_ and the generelized cross-entropy [5]_ [6]_.
 
         Parameters
         ----------
@@ -186,17 +185,17 @@ class PartialCRF(BaseCRF):
         Union[torch.FloatTensor, torch.cuda.FloatTensor]
             Mean of the losses over the mini-batch. (0,)
 
-        Refernces
-        ---------
-        ..  [1] Welleck, Sean, et al. "Neural text generation with unlikelihood
+        References
+        ----------
+        ..  [3] Welleck, Sean, et al. "Neural text generation with unlikelihood
                 training." arXiv preprint arXiv:1908.04319 (2019).
-        ..  [2] Jiang, Haoming, et al. "Named entity recognition with small
+        ..  [4] Jiang, Haoming, et al. "Named entity recognition with small
                 strongly labeled and large weakly labeled data." arXiv preprint
                 arXiv:2106.08977 (2021).
-        ..  [3] Zhang, Zhilu, and Mert Sabuncu. "Generalized cross entropy loss
+        ..  [5] Zhang, Zhilu, and Mert Sabuncu. "Generalized cross entropy loss
                 for training deep neural networks with noisy labels." Advances
                 in neural information processing systems 31 (2018).
-        ..  [4] Meng, Yu, et al. "Distantly-supervised named entity recognition
+        ..  [6] Meng, Yu, et al. "Distantly-supervised named entity recognition
                 with noise-robust learning and language model augmented
                 self-training." arXiv preprint arXiv:2109.05003 (2021).
         """

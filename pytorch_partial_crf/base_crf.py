@@ -10,7 +10,7 @@ from pytorch_partial_crf.utils import IMPOSSIBLE_SCORE
 
 
 class BaseCRF(nn.Module):
-    """Abstract method for the conditional random field (CRF) [1]_.
+    """Abstract method for the conditional random field (CRF) [1]_ .
 
     Parameters
     ----------
