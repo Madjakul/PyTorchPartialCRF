@@ -1,47 +1,28 @@
-name: Build and Deploy Sphinx
+# Name of our workflow
+name: 'Build and Deploy GitHub Pages'
 
+# Event triggering the workflow
 on:
   push:
     branches:
-      - master
-
+      - master # Event only triggered when pushing on the master branch
 jobs:
-  build_and_deploy:
+  docs:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Configure Git user identity
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r docs-requirements.txt
-
-      - name: Build Sphinx site
+          pip3 install -r docs-requirements.txt
+      - name: Sphinx build
         run: |
-          sphinx-build -b html docs docs/_build
-        env:
-          LC_ALL: C.UTF-8
-          LANG: C.UTF-8
-
-      - name: Deploy to gh-pages branch
-        run: |
-          cd docs/_build && \
-          git init && \
-          git add . && \
-          git commit -m "Deployed by GitHub Action" && \
-          git push --force "https://$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" master:gh-pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          sphinx-build docs _build
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build/
+          force_orphan: true
