@@ -1,31 +1,3 @@
-# Pytorch Partial/Fuzzy CRF
----
-
-This code is originally from [kajyuuen](https://github.com/kajyuuen).
-
-This fork simply implements custom loss functions, alongside some minor optimizations to the code.
-
-
-
-# Installation
-
-## Dependencies
-
-It only depends on ``torch``.
-
-```sh
-torch~=2.0.1
-```
-
-
-## Install
-
-```sh
-pip install -r requirements.txt
-```
-
-
-
 # Quickstart
 
 Remember that $-1$ means unknown tag:
@@ -134,19 +106,3 @@ tensor(41.8532, grad_fn=<MeanBackward0>)
 >>> crf(emissions, tags, mask=mask, loss_fn="gce")
 tensor(0.9967, grad_fn=<MeanBackward0>)
 ```
-
-
-
-# License
-
-MIT
-
-
-
-# References
-
-> kajyuuen. pytorch-partial-crf . 2021. [GitHub Repository](https://github.com/kajyuuen/pytorch-partial-crf/tree/master)
-
-> yumeng5. RoSTER. 2021. [GitHub Repository](https://github.com/yumeng5/RoSTER/tree/main)
-
-> amzn. amazon-weak-ner-needle. 2023. [GitHub Repository](https://github.com/amzn/amazon-weak-ner-needle)

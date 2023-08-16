@@ -1,75 +1,46 @@
-.. pytorch-partial-crf documentation master file, created by
-   sphinx-quickstart on Sun Oct 20 15:07:21 2019.
+.. PyTorch Partial/Fuzzy CRF documentation master file, created by
+   sphinx-quickstart on Wed Aug 16 00:14:50 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pytorch-partial-crf's documentation!
-===============================================
+#####################################################
+Welcome to PyTorch Partial/Fuzzy CRF's documentation!
+#####################################################
+
+
+Quickstart
+==========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   installation.md
+   quickstart.md
+   custom_losses.md
 
 
-Installation
-============
+Code
+====
 
-Install with pip::
+.. toctree::
+   :maxdepth: 1
 
-    pip install pytorch_partial_crf
+   pytorch_partial_crf/base_crf.rst
+   pytorch_partial_crf/partial_crf.rst
+   pytorch_partial_crf/utils.rst
 
 
-Getting started
-===============
+About
+=====
 
-.. currentmodule:: pytorch_partial_crf
+.. toctree::
+   :maxdepth: 1
 
-This package provides an implementation of a Partial/Fuzzy CRF layer for learning incompleted tag sequences, and a linear-chain CRF layer for learning tag sequences.
+   license.md
 
-.. code-block:: python
 
-   import torch
-   from pytorch_partial_crf import PartialCRF
-   num_tags = 6  # number of tags is 6
-   model = PartialCRF(num_tags)
+Indices and tables
+==================
 
-Computing log likelihood
-------------------------
-
-.. code-block:: python
-
-   batch_size = 3
-   sequence_length = 5
-   emissions = torch.randn(batch_size, sequence_length, num_tags)
-   # Set to -1 if it is unknown tag
-   tags = torch.LongTensor([
-         [1, 2, 3, 3, 5],
-         [-1, 3, -1, 2, 1],
-         [1, 0, -1, 4, -1],
-   ])  # (seq_length, batch_size)
-   model(emissions, tags) # Computing log likelihood
-
-Decoding
---------
-
-Viterbi decode
-
-.. code-block:: python
-
-   model.viterbi_decode(emissions)
-
-Restricted viterbi decode
-
-.. code-block:: python
-
-    possible_tags = torch.randn(batch_size, sequence_length, num_tags)
-    possible_tags[possible_tags <= 0] = 0 # `0` express that can not pass.
-    possible_tags[possible_tags > 0] = 1 # `1` express that can pass.
-    possible_tags = possible_tags.byte()
-    model.restricted_viterbi_decode(emissions, possible_tags)
-
-Marginal probabilities
-
-.. code-block:: python
-
-   model.marginal_probabilities(emissions)
+* :ref:`genindex`
+* :ref:`modindex`

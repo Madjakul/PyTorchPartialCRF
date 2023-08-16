@@ -1,3 +1,4 @@
-from pytorch_partial_crf.marginal_crf import MarginalCRF
 from pytorch_partial_crf.partial_crf import PartialCRF
-from pytorch_partial_crf.crf import CRF
+
+__all__ = ["PartialCRF"]
+
