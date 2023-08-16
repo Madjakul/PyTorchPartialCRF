@@ -1,7 +1,5 @@
 # pytorch_partial_crf/utils.py
 
-from typing import Union
-
 import torch
 
 
@@ -10,8 +8,8 @@ IMPOSSIBLE_SCORE = -100
 
 
 def create_possible_tag_masks(
-    num_tags: int, tags: Union[torch.LongTensor, torch.cuda.LongTensor]
-) -> Union[torch.ByteTensor, torch.cuda.ByteTensor]:
+    num_tags: int, tags: torch.LongTensor,
+) -> torch.ByteTensor:
     """Creates a mask-like sparse tensor where the index of the correct tag has
     a value of 1, allowing for multilabel targets.
 
@@ -19,12 +17,12 @@ def create_possible_tag_masks(
     ----------
     num_tags: int
         Number of different tags in the dataset.
-    tags: Union[torch.LongTensor, torch.cuda.LongTensor]
+    tags: torch.LongTensor
         Tensor of target labels. (batch_size, sequence_length).
 
     Returns
     -------
-    masks: Union[torch.ByteTensor, torch.cuda.ByteTensor]
+    masks: torch.ByteTensor
         Mask-like sparse tensor indicating the target label.
         (batch_size, sequence_length, num_tags).
     """
@@ -42,5 +40,5 @@ def create_possible_tag_masks(
     )
     masks.scatter_(2, tags_, 1)
     masks[no_annotation_idx] = 1
-    return masks
+    return masks    # type: ignore
 

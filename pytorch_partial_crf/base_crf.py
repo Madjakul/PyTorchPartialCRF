@@ -1,7 +1,7 @@
 # pytorch_partial_crf/base_crf.py
 
 from abc import abstractmethod
-from typing import Optional, Literal, Union, List
+from typing import Optional, Literal, List
 
 import torch
 import torch.nn as nn
@@ -74,27 +74,25 @@ class BaseCRF(nn.Module):
 
     @abstractmethod
     def forward(
-        self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
-        tags: Union[torch.LongTensor, torch.cuda.LongTensor],
-        mask: Optional[Union[torch.ByteTensor, torch.cuda.ByteTensor]]=None
-    ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
+        self, emissions: torch.FloatTensor, tags: torch.LongTensor,
+        mask: Optional[torch.ByteTensor]=None
+    ) -> torch.FloatTensor:
         raise NotImplementedError()
 
     def _forward_algorithm(
-        self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor],
+        self, emissions: torch.FloatTensor, mask: torch.ByteTensor,
         reverse_direction: bool=False
-    ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
+    ) -> torch.FloatTensor:
         """Computes the logarithm of the unary/emission scores of each token
         plus their transition score. Despite its name, this function is used to
         compute the `forward-backward algorithm https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm`__.
 
         Parameters
         ----------
-        emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
+        emissions: torch.FloatTensor
             Unary/emission score of each tokens.
             (batch_size, sequence_length, num_tags).
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor]
+        mask: torch.ByteTensor
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
         reverse_direction: bool, default=False
@@ -103,13 +101,13 @@ class BaseCRF(nn.Module):
 
         Returns
         -------
-        Union[torch.FloatTensor, torch.cuda.FloatTensor]
+        torch.FloatTensor
             Log-scores for each token. (sequence_length, batch_size, num_tags).
         """
         batch_size, sequence_length, num_tags = emissions.data.shape
         broadcast_emissions = \
             emissions.transpose(0, 1).unsqueeze(2).contiguous()             # (sequence_length, batch_size, 1, num_tags)
-        mask = mask.float().transpose(0, 1).contiguous()                    # (sequence_length, batch_size)
+        mask = mask.float().transpose(0, 1).contiguous()                    # (sequence_length, batch_size) # type: ignore
         broadcast_transitions = self.transitions.unsqueeze(0)               # (1, num_tags, num_tags)
         sequence_iter = range(1, sequence_length)
         # backward algorithm
@@ -147,44 +145,44 @@ class BaseCRF(nn.Module):
             )
         if reverse_direction:
             log_proba.reverse()
-        return torch.stack(log_proba)
+        return torch.stack(log_proba)                                       # type: ignore
 
     def marginal_probabilities(
-        self, emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor],
-        mask: Optional[Union[torch.FloatTensor, torch.cuda.FloatTensor]]=None
-    ) -> Union[torch.FloatTensor, torch.cuda.FloatTensor]:
+        self, emissions: torch.FloatTensor,
+        mask: Optional[torch.ByteTensor]=None
+    ) -> torch.FloatTensor:
         """Computes the probability of each token.
 
         Parameters
         ----------
-        emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
+        emissions: torch.FloatTensor
             Unary/emission score of each tokens.
             (batch_size, sequence_length, num_tags).
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor], optional
+        mask: torch.ByteTensor, optional
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
 
         Returns
         -------
-        Union[torch.FloatTensor, torch.cuda.FloatTensor]
+        torch.FloatTensor
             Marginal probability of each token to belong to a given class.
             (sequence_length, sequence_length, num_tags).
         """
         if mask is None:
             batch_size, sequence_length, _ = emissions.data.shape
-            mask = torch.ones(
+            mask = torch.ones(                  # type: ignore
                 [batch_size, sequence_length],
-                dtype=torch.float32,
+                dtype=torch.uint8,
                 device=self.device
             )
         alpha = self._forward_algorithm(        # (sequence_length, batch_size, num_tags)
             emissions,
-            mask,
+            mask,                               # type: ignore
             reverse_direction=False
         )
         beta = self._forward_algorithm(         # (sequence_length, batch_size, num_tags)
             emissions,
-            mask,
+            mask,                               # type: ignore
             reverse_direction=True
         )
         z = torch.logsumexp(                    # (batch_size)
@@ -192,21 +190,20 @@ class BaseCRF(nn.Module):
             dim=1
         )
         proba = alpha + beta - z.view(1, -1, 1) # (sequence_length, batch_size, num_tags)
-        return torch.exp(proba)                 # (sequence_length, batch_size, num_tags)
+        return torch.exp(proba)                 # (sequence_length, batch_size, num_tags) # type: ignore
 
     def viterbi_decode(
-        self, emissions: Union[torch.Tensor, torch.cuda.FloatTensor],
-        mask: Optional[Union[torch.ByteTensor, torch.cuda.ByteTensor]]=None
+        self, emissions: torch.Tensor, mask: Optional[torch.ByteTensor]=None
     ) -> List[int]:
         """
         Dynamically computes the best sequence of tags.
 
         Parameters
         ----------
-        emissions: Union[torch.FloatTensor, torch.cuda.FloatTensor]
+        emissions: torch.FloatTensor
             Unary/emission score of each tokens.
             (batch_size, sequence_length, num_tags).
-        mask: Union[torch.ByteTensor, torch.cuda.ByteTensor], optional
+        mask: torch.ByteTensor, optional
             Masked used to to discard subwords, special tokens or padding from
             being added to the log-probability. (batch_size, sequence_length).
 
@@ -218,13 +215,13 @@ class BaseCRF(nn.Module):
         """
         batch_size, sequence_length, _ = emissions.shape
         if mask is None:
-            mask = torch.ones(
+            mask = torch.ones(                                                  # type: ignore
                 [batch_size, sequence_length],
                 dtype=torch.float32,
                 device=self.device
             )
         emissions = emissions.transpose(0, 1).contiguous()
-        mask = mask.transpose(0, 1).contiguous()
+        mask = mask.transpose(0, 1).contiguous()                                # type: ignore
         # Start transition and first emission score
         score = self.start_transitions + emissions[0]
         history = []
@@ -234,12 +231,12 @@ class BaseCRF(nn.Module):
             next_score = \
                 broadcast_score + self.transitions + broadcast_emissions
             next_score, indices = next_score.max(dim=1)
-            score = torch.where(mask[i].unsqueeze(1) == 1, next_score, score)
+            score = torch.where(mask[i].unsqueeze(1) == 1, next_score, score)   # type: ignore
             history.append(indices)
         # Add end transition score
         score += self.end_transitions
         # Compute the best path
-        seq_ends = mask.long().sum(dim=0) - 1
+        seq_ends = mask.long().sum(dim=0) - 1                                   # type: ignore
         best_tags_list = []
         for i in range(batch_size):
             _, best_last_tag = score[i].max(dim=0)
