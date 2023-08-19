@@ -198,13 +198,18 @@ class PartialCRF(BaseCRF):
         if mask is None:
             mask = torch.ones_like(tags, dtype=torch.uint8, device=self.device) # type: ignore
         possible_tags = create_possible_tag_masks(self.num_tags, tags)          # (batch_size, sequence_length, num_tags)
-        pred = self.marginal_probabilities(emissions, mask).transpose(0, 1)     # (batch_size, sequence_length, num_tags)
         # If you want NLL
         if loss_fn == "nll":
             gold_score = self._numerator_score(emissions, mask, possible_tags)  # (batch_size,) # type: ignore
             forward_score = self._denominator_score(emissions, mask)            # (batch_size,) # type: ignore
             nll = forward_score - gold_score                                    # (batch_size,)
             return torch.mean(nll)                                              # Mean instead of sum # type: ignore
+        pred = self.marginal_probabilities(emissions, mask).transpose(0, 1)     # (batch_size, sequence_length, num_tags)
+        batch_size, sequence_length, num_tags = pred.shape
+        p_mask = (
+            mask.unsqueeze(2).expand(batch_size, sequence_length, num_tags)
+            != 0.
+        )
         # If you want corrected NLL
         if loss_fn == "c_nll":
             gold_score = self._numerator_score(emissions, mask, possible_tags)  # (batch_size,) # type: ignore
@@ -215,6 +220,7 @@ class PartialCRF(BaseCRF):
             weights = []
             weights_bar = []
             for sequence in pred:
+                p = torch.masked_select(pred, p_mask)                           # (possible_tags==1,)
                 hist = torch.histc(sequence, bins=20, min=0., max=1.)
                 hist_mask = hist > 0
                 hist = hist[hist_mask]
@@ -228,7 +234,6 @@ class PartialCRF(BaseCRF):
             return torch.mean(c_nll)                                            # type: ignore
         # If you want GCE
         if loss_fn == "gce":
-            p_mask = possible_tags.eq(1.)                                       # (batch_size, sequence_length, num_tags)
             p = torch.masked_select(pred, p_mask)                               # (possible_tags==1,)
             gce = (1 - p**self.q) / self.q
             gce = torch.mean(gce)                                               # (loss.view(-1)*weights).sum() / weights.sum()
