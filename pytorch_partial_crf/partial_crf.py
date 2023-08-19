@@ -10,7 +10,6 @@ from pytorch_partial_crf.utils import (
 )
 
 
-
 class PartialCRF(BaseCRF):
     """Partial/Fuzzy Conditional random field.
 
@@ -66,7 +65,7 @@ class PartialCRF(BaseCRF):
         # Start transition score and first emission
         first_possible_tag = possible_tags[0]
         alpha = self.start_transitions + emissions[0]                       # (batch_size, num_tags)
-        alpha[(first_possible_tag == 0)] = IMPOSSIBLE_SCORE
+        alpha[(first_possible_tag == 0)].fill_(IMPOSSIBLE_SCORE)
 
         for i in range(1, sequence_length):
             current_possible_tags = possible_tags[i-1]                      # (batch_size, num_tags)
@@ -74,7 +73,7 @@ class PartialCRF(BaseCRF):
 
             # Emissions scores
             emissions_score = emissions[i]
-            emissions_score[(next_possible_tags == 0)] = IMPOSSIBLE_SCORE
+            emissions_score[(next_possible_tags == 0)].fill_(IMPOSSIBLE_SCORE)
             emissions_score = emissions_score.view(batch_size, 1, num_tags)
 
             # Transition scores
@@ -197,30 +196,28 @@ class PartialCRF(BaseCRF):
                 self-training." arXiv preprint arXiv:2109.05003 (2021).
         """
         if mask is None:
-            mask = torch.ones_like(tags, dtype=torch.uint8)                     # type: ignore
+            mask = torch.ones_like(tags, dtype=torch.uint8, device=self.device) # type: ignore
         possible_tags = create_possible_tag_masks(self.num_tags, tags)          # (batch_size, sequence_length, num_tags)
         pred = self.marginal_probabilities(emissions, mask).transpose(0, 1)     # (batch_size, sequence_length, num_tags)
         # If you want NLL
-        if loss_fn in ("nll", "c_nll"):
+        if loss_fn == "nll":
             gold_score = self._numerator_score(emissions, mask, possible_tags)  # (batch_size,) # type: ignore
             forward_score = self._denominator_score(emissions, mask)            # (batch_size,) # type: ignore
             nll = forward_score - gold_score                                    # (batch_size,)
-            if loss_fn == "nll":
-                return torch.mean(nll)                                          # Mean instead of sum # type: ignore
-            # If you want corrected NLL
+            return torch.mean(nll)                                              # Mean instead of sum # type: ignore
+        # If you want corrected NLL
+        if loss_fn == "c_nll":
+            gold_score = self._numerator_score(emissions, mask, possible_tags)  # (batch_size,) # type: ignore
+            forward_score = self._denominator_score(emissions, mask)            # (batch_size,) # type: ignore
+            nll = forward_score - gold_score                                    # (batch_size,)
             nlu = -(1 - (-nll).exp()).log()
-            if torch.isnan(nlu).any() or torch.isinf(nlu).any():
-                nl = (1 - (-nll).exp())
-                nl = nl + (nl < 1e-4).to(nl).detach() * (1e-4 - nl).detach()
-                nlu = - nl.log()
+            nlu[torch.isnan(nlu) | torch.isinf(nlu)].fill_(1e-4)
             weights = []
             weights_bar = []
             for sequence in pred:
-                p_mask = possible_tags.eq(1.)
-                local_p = torch.masked_select(sequence, p_mask)
-                hist, _ = torch.histogram(local_p, bins=20, range=(0., 1.))
-                hist_mask = hist.ne(0.)
-                hist = torch.masked_select(hist, hist_mask)
+                hist = torch.histc(sequence, bins=20, min=0., max=1.)
+                hist_mask = hist > 0
+                hist = hist[hist_mask]
                 max_weight = torch.max(hist)
                 local_weights = (max_weight - hist) / max_weight
                 weights.append(torch.sum(local_weights))
@@ -230,9 +227,11 @@ class PartialCRF(BaseCRF):
             c_nll = weights * nll + weights_bar * nlu
             return torch.mean(c_nll)                                            # type: ignore
         # If you want GCE
-        p_mask = possible_tags.eq(1.)                                          # (batch_size, sequence_length, num_tags)
-        p = torch.masked_select(pred, p_mask)                                   # (possible_tags==1,)
-        gce = (1 - p**self.q) / self.q
-        gce = torch.mean(gce)                                                   # (loss.view(-1)*weights).sum() / weights.sum()
-        return gce                                                              # type: ignore
+        if loss_fn == "gce":
+            p_mask = possible_tags.eq(1.)                                       # (batch_size, sequence_length, num_tags)
+            p = torch.masked_select(pred, p_mask)                               # (possible_tags==1,)
+            gce = (1 - p**self.q) / self.q
+            gce = torch.mean(gce)                                               # (loss.view(-1)*weights).sum() / weights.sum()
+            return gce                                                          # type: ignore
+        raise ValueError(f"Invalid loss function: {loss_fn}")
 

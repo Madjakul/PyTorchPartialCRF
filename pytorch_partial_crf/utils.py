@@ -28,17 +28,16 @@ def create_possible_tag_masks(
     """
     copy_tags = tags.clone()
     no_annotation_idx = (copy_tags == UNLABELED_INDEX)
-    copy_tags[copy_tags == UNLABELED_INDEX] = 0
+    copy_tags[no_annotation_idx].fill_(0)
 
-    tags_ = torch.unsqueeze(copy_tags, 2)
     masks = torch.zeros(
-        tags_.size(0),
-        tags_.size(1),
+        copy_tags.size(0),
+        copy_tags.size(1),
         num_tags,
         dtype=torch.uint8,
         device=tags.device
     )
-    masks.scatter_(2, tags_, 1)
-    masks[no_annotation_idx] = 1
+    masks.scatter_(2, copy_tags.unsqueeze(2), 1)
+    masks[no_annotation_idx].fill_(1)
     return masks    # type: ignore
 

@@ -217,7 +217,7 @@ class BaseCRF(nn.Module):
         if mask is None:
             mask = torch.ones(                                                  # type: ignore
                 [batch_size, sequence_length],
-                dtype=torch.float32,
+                dtype=torch.uint8,
                 device=self.device
             )
         emissions = emissions.transpose(0, 1).contiguous()
@@ -236,7 +236,7 @@ class BaseCRF(nn.Module):
         # Add end transition score
         score += self.end_transitions
         # Compute the best path
-        seq_ends = mask.long().sum(dim=0) - 1                                   # type: ignore
+        seq_ends = mask.sum(dim=0) - 1                                          # type: ignore
         best_tags_list = []
         for i in range(batch_size):
             _, best_last_tag = score[i].max(dim=0)
