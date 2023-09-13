@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base CRF &mdash; PyTorch Partial/Fuzzy CRF  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Partial/Fuzzy CRF" href="partial_crf.html" />
+    <link rel="prev" title="List of Changes" href="../custom_losses.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyTorch Partial/Fuzzy CRF
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../installation.html#install">Install</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quickstart.html#using-the-partial-fuzzy-crf">Using the Partial/Fuzzy CRF</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../quickstart.html#decoding">Decoding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quickstart.html#computing-the-marginal-probabilities">Computing the Marginal Probabilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quickstart.html#forward-pass-with-custom-loss">Forward Pass with Custom Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../quickstart.html#negative-log-likelihood-nll">Negative log-likelihood <code class="docutils literal notranslate"><span class="pre">nll</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../quickstart.html#corrected-negative-log-likelihood-c-nll">Corrected negative log-likelihood <code class="docutils literal notranslate"><span class="pre">c_nll</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../quickstart.html#generalized-cross-entropy-gce">Generalized cross-entropy <code class="docutils literal notranslate"><span class="pre">gce</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_losses.html">List of Changes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../custom_losses.html#custom-losses">Custom Losses</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../custom_losses.html#negative-log-likelihood">Negative Log-Likelihood</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom_losses.html#corrected-negative-log-likelihood">Corrected Negative Log-Likelihood</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom_losses.html#generelaized-cross-entropy">Generelaized Cross-Entropy</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../custom_losses.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Base CRF</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF"><code class="docutils literal notranslate"><span class="pre">BaseCRF</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.num_tags"><code class="docutils literal notranslate"><span class="pre">BaseCRF.num_tags</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.start_transitions"><code class="docutils literal notranslate"><span class="pre">BaseCRF.start_transitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.device"><code class="docutils literal notranslate"><span class="pre">BaseCRF.device</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.end_transitions"><code class="docutils literal notranslate"><span class="pre">BaseCRF.end_transitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.transitions"><code class="docutils literal notranslate"><span class="pre">BaseCRF.transitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.forward"><code class="docutils literal notranslate"><span class="pre">BaseCRF.forward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.marginal_probabilities"><code class="docutils literal notranslate"><span class="pre">BaseCRF.marginal_probabilities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytorch_partial_crf.base_crf.BaseCRF.viterbi_decode"><code class="docutils literal notranslate"><span class="pre">BaseCRF.viterbi_decode()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="partial_crf.html">Partial/Fuzzy CRF</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="partial_crf.html#pytorch_partial_crf.partial_crf.PartialCRF"><code class="docutils literal notranslate"><span class="pre">PartialCRF</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="partial_crf.html#pytorch_partial_crf.partial_crf.PartialCRF.q"><code class="docutils literal notranslate"><span class="pre">PartialCRF.q</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="partial_crf.html#pytorch_partial_crf.partial_crf.PartialCRF.forward"><code class="docutils literal notranslate"><span class="pre">PartialCRF.forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilitaries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#pytorch_partial_crf.utils.create_possible_tag_masks"><code class="docutils literal notranslate"><span class="pre">create_possible_tag_masks()</span></code></a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyTorch Partial/Fuzzy CRF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Base CRF</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/pytorch_partial_crf/base_crf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pytorch_partial_crf.base_crf">
+<span id="base-crf"></span><h1>Base CRF<a class="headerlink" href="#module-pytorch_partial_crf.base_crf" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytorch_partial_crf.base_crf.</span></span><span class="sig-name descname"><span class="pre">BaseCRF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_tags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'cpu'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'cuda'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pytorch_partial_crf/base_crf.html#BaseCRF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method for the conditional random field (CRF) <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_tags</strong> (<em>int</em>) – Number of possible tags (counting the padding one if needed).</p></li>
+<li><p><strong>padding_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Padding index.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>{&quot;cpu&quot;</em><em>, </em><em>&quot;cuda&quot;}</em>) – Wether to do computation on GPU or CPU.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.num_tags">
+<span class="sig-name descname"><span class="pre">num_tags</span></span><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.num_tags" title="Permalink to this definition"></a></dt>
+<dd><p>Number of possible tags (counting the padding one if needed).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.start_transitions">
+<span class="sig-name descname"><span class="pre">start_transitions</span></span><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.start_transitions" title="Permalink to this definition"></a></dt>
+<dd><p>Begining scores of the transition matrix. Initialized with values
+values sampled from a uniform distribution in [-1; 1]. (num_tags).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Parameter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.device" title="Permalink to this definition"></a></dt>
+<dd><p>Wether to do computation on GPU or CPU.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, {“cpu”, “cuda”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.end_transitions">
+<span class="sig-name descname"><span class="pre">end_transitions</span></span><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.end_transitions" title="Permalink to this definition"></a></dt>
+<dd><p>Ending scores of the transition matrix. Initialized with values
+values sampled from a uniform distribution in [-1; 1]. (num_tags).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Parameter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.transitions">
+<span class="sig-name descname"><span class="pre">transitions</span></span><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.transitions" title="Permalink to this definition"></a></dt>
+<dd><p>Transition matrix. Initialized using xavier <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>’s method. Values are
+sampled from a uniform distribution in [-1; 1]. (num_tags, num_tags).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Parameter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Lafferty, John, Andrew McCallum, and Fernando CN Pereira.
+“Conditional random fields: Probabilistic models for segmenting and
+labeling sequence data.” (2001).</p>
+</aside>
+<aside class="footnote brackets" id="id4" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>Glorot, Xavier, and Yoshua Bengio. “Understanding the difficulty of
+training deep feedforward neural networks.” Proceedings of the
+thirteenth international conference on artificial intelligence and
+statistics. JMLR Workshop and Conference Proceedings, 2010.</p>
+</aside>
+</aside>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.forward">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emissions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ByteTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FloatTensor</span></span></span><a class="reference internal" href="../_modules/pytorch_partial_crf/base_crf.html#BaseCRF.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.marginal_probabilities">
+<span class="sig-name descname"><span class="pre">marginal_probabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emissions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ByteTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">FloatTensor</span></span></span><a class="reference internal" href="../_modules/pytorch_partial_crf/base_crf.html#BaseCRF.marginal_probabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.marginal_probabilities" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the probability of each token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>emissions</strong> (<em>torch.FloatTensor</em>) – Unary/emission score of each tokens.
+(batch_size, sequence_length, num_tags).</p></li>
+<li><p><strong>mask</strong> (<em>torch.ByteTensor</em><em>, </em><em>optional</em>) – Masked used to to discard subwords, special tokens or padding from
+being added to the log-probability. (batch_size, sequence_length).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Marginal probability of each token to belong to a given class.
+(sequence_length, sequence_length, num_tags).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytorch_partial_crf.base_crf.BaseCRF.viterbi_decode">
+<span class="sig-name descname"><span class="pre">viterbi_decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emissions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ByteTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/pytorch_partial_crf/base_crf.html#BaseCRF.viterbi_decode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytorch_partial_crf.base_crf.BaseCRF.viterbi_decode" title="Permalink to this definition"></a></dt>
+<dd><p>Dynamically computes the best sequence of tags.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>emissions</strong> (<em>torch.FloatTensor</em>) – Unary/emission score of each tokens.
+(batch_size, sequence_length, num_tags).</p></li>
+<li><p><strong>mask</strong> (<em>torch.ByteTensor</em><em>, </em><em>optional</em>) – Masked used to to discard subwords, special tokens or padding from
+being added to the log-probability. (batch_size, sequence_length).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>best_tags_list</strong> – Best sequence of tag for each sequence in the batch.
+(batch_size, <code class="docutils literal notranslate"><span class="pre">torch.where(mask.shape[i]==1)</span></code>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../custom_losses.html" class="btn btn-neutral float-left" title="List of Changes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="partial_crf.html" class="btn btn-neutral float-right" title="Partial/Fuzzy CRF" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Madjakul.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
