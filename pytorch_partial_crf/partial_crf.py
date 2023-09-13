@@ -236,7 +236,7 @@ class PartialCRF(BaseCRF):
         if loss_fn == "gce":
             p = torch.masked_select(pred, p_mask)                               # (possible_tags==1,)
             gce = ((1 - p**self.q) + 1e-4) / (self.q + 1e-4)
-            gce = gce.sum()       # (loss.view(-1)*weights).sum() / weights.sum()
+            gce = gce.sum()
             return gce
         raise ValueError(f"Invalid loss function: {loss_fn}")
 
